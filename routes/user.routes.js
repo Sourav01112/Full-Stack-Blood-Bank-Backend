@@ -2,11 +2,15 @@ const express = require("express");
 const usersRouter = express.Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const UserModel = require("../model/user.model");
 const { authMiddleware } = require("../middleware/auth.middleware");
-require("dotenv").config();
-// register
+const UserModel = require("../model/user.model");
+const InventoryModel = require("../model/inventory.model");
+const mongoose = require("mongoose");
 
+require("dotenv").config();
+
+
+// register]
 usersRouter.post("/register", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -53,7 +57,7 @@ usersRouter.post("/login", async (req, res) => {
 
       return res
         .status(401)
-        .send({ status :401, success: false, message: "Invalid username or password" });
+        .send({ status: 401, success: false, message: "Invalid username or password" });
     }
     // userType is matching
     if (userExists.userType !== req.body.userType) {
@@ -109,8 +113,8 @@ usersRouter.post("/login", async (req, res) => {
 });
 
 // Get Current User According to UserType
-usersRouter.get("/get-current-user",authMiddleware, async (req, res) => {
-  console.log("inside---->, /get-current-user", req.body)
+usersRouter.get("/get-current-user", authMiddleware, async (req, res) => {
+  // console.log("inside---->, /get-current-user", req.body)
 
   try {
     const isUser = await UserModel.findOne({ _id: req.body.userID });
@@ -130,6 +134,7 @@ usersRouter.get("/get-current-user",authMiddleware, async (req, res) => {
       });
     }
   } catch (error) {
+    console.log("error in get-current-user", error)
     return res.json({
       success: false,
       message: error.message,
@@ -137,30 +142,164 @@ usersRouter.get("/get-current-user",authMiddleware, async (req, res) => {
   }
 });
 
+// Get All Unique Donor from the organization
+usersRouter.post('/get-all-donors', authMiddleware, async (req, res) => {
+  const page = parseInt(req.body.page, 10)
+  const limit = parseInt(req.body.limit, 10)
+  const skip = (page - 1) * limit
 
-usersRouter.post('/get-all-donors', authMiddleware, async(req,res)=>{
+  const options = {
+    page,
+    limit,
+    collation: {
+      locale: 'en',
+      strength: 2,
+    },
+    sort: { createdAt: -1 }
+
+  };
+  console.log("options", options)
   try {
+    // Get all unique donors ids from Inventory if it matches the Org. then show unique donors
+    const organization = new mongoose.Types.ObjectId(req.body.userID);
 
+    const aggregationPipelineResult = await InventoryModel.aggregate([
+      {
+        $match: {
+          inventoryType: 'Donation-In',
+          organization,
+        },
+      },
+      {
+        $group: {
+          _id: "$donor",
+        },
+      },
+    ]).exec();
+    const populateKeyword = 'users'
 
+    const aggregationResult = await performPopulateAfterAggregationPipeline(aggregationPipelineResult, populateKeyword)
+    const response = formAggregateResponse(aggregationResult, options)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    
+    return res.json({
+      success: true,
+      message: "Donors Data Fetched Successfully",
+      data: response,
+    })
   } catch (error) {
+
+    console.log("error", error)
+    return res.json({
+      success: false,
+      message: error.message,
+    });
+  }
+})
+
+// Get All Unique Hospitals from the organization
+usersRouter.post('/get-all-hospitals', authMiddleware, async (req, res) => {
+  const page = parseInt(req.body.page, 10)
+  const limit = parseInt(req.body.limit, 10)
+  const skip = (page - 1) * limit
+
+  const options = {
+    page,
+    limit,
+    collation: {
+      locale: 'en',
+      strength: 2,
+    },
+    sort: { createdAt: -1 }
+  };
+  try {
+    // Get all unique donors ids from Inventory if it matches the Org. then show unique donors
+    const organization = new mongoose.Types.ObjectId(req.body.userID);
+
+    const aggregationPipelineResult = await InventoryModel.aggregate([
+      {
+        $match: {
+          inventoryType: 'Donation-Out',
+          organization,
+        },
+      },
+      {
+        $group: {
+          _id: "$hospital",
+        },
+      },
+    ]).exec();
+    const populateKeyword = 'users'
+
+    const aggregationResult = await performPopulateAfterAggregationPipeline(aggregationPipelineResult, populateKeyword)
+    const response = formAggregateResponse(aggregationResult, options)
+
+    return res.json({
+      success: true,
+      message: "Donors Data Fetched Successfully",
+      data: response,
+    })
+  } catch (error) {
+
+    console.log("error", error)
+    return res.json({
+      success: false,
+      message: error.message,
+    });
+  }
+})
+
+
+// Get All Unique Organizations for Donor View
+
+usersRouter.post('/get-all-org-for-donor', authMiddleware, async (req, res) => {
+  const page = parseInt(req.body.page, 10)
+  const limit = parseInt(req.body.limit, 10)
+  const skip = (page - 1) * limit
+
+  const options = {
+    page,
+    limit,
+    collation: {
+      locale: 'en',
+      strength: 2,
+    },
+    sort: { createdAt: -1 }
+
+  };
+  console.log("options", options)
+
+
+  // return 
+  try {
+    // Get all unique donors ids from Inventory if it matches the Org. then show unique donors
+    const donor = new mongoose.Types.ObjectId(req.body.userID);
+
+    const aggregationPipelineResult = await InventoryModel.aggregate([
+      {
+        $match: {
+          inventoryType: 'Donation-In',
+          donor,
+        },
+      },
+      {
+        $group: {
+          _id: "$organization",
+        },
+      },
+    ]).exec();
+    const populateKeyword = 'users'
+
+    const aggregationResult = await performPopulateAfterAggregationPipeline(aggregationPipelineResult, populateKeyword)
+    const response = formAggregateResponse(aggregationResult, options)
+
+    return res.json({
+      success: true,
+      message: "Donors Data Fetched Successfully",
+      data: response,
+    })
+  } catch (error) {
+
+    console.log("error", error)
     return res.json({
       success: false,
       message: error.message,
@@ -170,7 +309,76 @@ usersRouter.post('/get-all-donors', authMiddleware, async(req,res)=>{
 
 
 
+const performPopulateAfterAggregationPipeline = async (aggregationPipelineResult, populateKeyword) => {
+  return await InventoryModel.populate(aggregationPipelineResult, {
+    path: '_id',
+    model: populateKeyword,
+  })
+}
+
+const formAggregateResponse = (aggregationResult, options) => {
+  // console.log("aggregationResult", aggregationResult.length)
+  const totalCount = aggregationResult.length
+  const totalPages = Math.ceil(totalCount / options.limit);
+
+  return {
+    aggregationResult,
+    totalDocs: totalCount,
+    limit: options.limit,
+    totalPages,
+    page: options.page,
+    hasNextPage: options.page < totalPages,
+    hasPrevPage: options.page > 1,
+    prevPage: options.page > 1 ? options.page - 1 : null,
+    nextPage: options.page < totalPages ? options.page + 1 : null
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // export
 module.exports = { usersRouter };
+
+

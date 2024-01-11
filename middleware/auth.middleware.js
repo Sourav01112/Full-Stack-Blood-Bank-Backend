@@ -8,17 +8,19 @@ const authMiddleware = (req, res, next) => {
     try {
       const decoded = jwt.verify(tokenExists, process.env.JWTSecret);
       if (decoded) {
-        console.log("decoded", decoded)
+        // console.log("decoded", decoded)
   
-        // req.body.userID = decoded.userID;
+        req.body.userID = decoded.userID;
 
-        req.body = req.body ? { ...req.body, userID: decoded.userID } : { userID: decoded.userID };
+        // req.body = req.body ? { ...req.body, userID: decoded.userID } : { userID: decoded.userID };
 
         next();
       } else {
         res.status(200).json({ message: "Not Authorized" });
       }
     } catch (error) {
+
+      console.log("error in middleware", error)
       return res.send({
         success: false,
         message: error.message,

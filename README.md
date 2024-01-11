@@ -1,4 +1,4 @@
-# Full-Stack-Blood-Bank-Backend (Includes Indexing, Search, Complex Mongo Db queries like aggregation, grouping, match)
+# Full-Stack-Blood-Bank-Backend (Includes Indexing, Search, Complex Mongo Db queries like aggregation, grouping, match, custom pagination, mongoose paginate, distinct property, unwind, lookup)
 
  ** HIGH LEVEL DESIGN **
 

@@ -8,26 +8,39 @@ const mongoose = require("mongoose");
 // Add Inventory
 
 inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
-  const { email } = req.body;
-  console.log("req/body", req.body)
+
+  const { email, inventoryType, bloodGroup } = req.body;
+
+  console.log("req.body", req.body);
 
   try {
     // based on email and inventoryType : Validation
     // fetch user
-
     const user = await UserModel.findOne({ email });
-    // console.log("@@@@@@@@@@", user.userType);
-    // checks
+    const bloodGroupCheck = await InventoryModel.find({ bloodGroup })
+
+    console.log("user", user);
+    console.log("bloodGroupCheck", bloodGroupCheck);
+
+
     if (!user) throw new Error("Invalid Email");
-    if (req.body.inventoryType === "Donation-In" && user.userType !== "donor") {
+    else if (req.body.inventoryType === "Donation-In" && user.userType !== "donor") {
       throw new Error("The email is not recognized as Donor");
     }
-    if (
+    else if (
       req.body.inventoryType === "Donation-Out" &&
       user.userType !== "hospital"
     ) {
       throw new Error("The email is not recognized as hospital");
     }
+
+    else if (inventoryType == 'Donation-Out' && bloodGroupCheck.length == 0 || bloodGroup.length == null) {
+      throw new Error(`The requested blood group ${bloodGroup} is currently unavailable in the inventory`);
+    }
+
+    // console.log("@@@@@@@@@@", user.userType);
+    // checks
+
     //  saving ID as per Inventory Type
 
     if (req.body.inventoryType === "Donation-Out") {
@@ -132,7 +145,7 @@ inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
     sort: { createdAt: -1 }
   };
 
-  console.log("search", req.body.search)
+  // console.log("search", req.body.search)
   try {
 
     const combinedQuery = {
@@ -142,7 +155,7 @@ inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
 
     InventoryModel.paginate(combinedQuery, options, function (err, doc) {
       if (doc.docs !== null) {
-        console.log("doc", doc)
+        // console.log("doc", doc)
         return res.send({
           success: true,
           data: doc,
@@ -165,17 +178,3 @@ inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
 module.exports = { inventoryRouter };
 
 
-
-/*     const inventory = await InventoryModel.find({
-      organization: req.body.userID,
-    })
-      .populate("donor")
-      .populate("hospital")
-      // .populate('organization')
-    console.log(inventory); 
-
-    return res.send({
-            success: true,
-            data: inventory,
-            message : 'Fetched'
-          }); */
