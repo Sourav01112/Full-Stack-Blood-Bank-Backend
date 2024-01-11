@@ -1,24 +1,29 @@
-# Full-Stack-Blood-Bank-App (REACT.js, Tailwind CSS and Ant Design, complex Mongo Db queries like aggregation, grouping )
+# Full-Stack-Blood-Bank-Backend (Includes Indexing, Search, Complex Mongo Db queries like aggregation, grouping, match)
+
+ ** HIGH LEVEL DESIGN **
+
+A. Organization : Tesla Blood Bank (Elon Musk), Meta Blood Bank (Mark Zuckerberg )
+
+B. Hospital : Max Hospital (Ramesh), Fortis Hospital (Suresh)
+C. Donors : Sourav, Rakesh, Pravesh, Rishi, Yash
 
 
-<p>1. Using Vite Template for fast performance</p>
+--------------------------------------------------------
 
-```
-$ npm create vite@latest
-```
+Page Data(temp)
 
+==> For Organization__ 
 
-<p>2. Using AntD purely for component purpose</p>
+1. Add Donation : Inventory In (from Donor)
+2. Add Hospital : Inventory Out (to hospital from Org)
+3. List Donors data and history 
+4. List Hospitals data and history
+5. Dashboard 
+ 
+==> For Hospitals__ 
 
-```
-$ npm install antd --save
-```
+ List Organization data and history 
 
-<p>3. Using Tailwind CSS for styling </p>
+==> For Donors__ 
 
-```
-$ npm install -D tailwindcss postcss autoprefixer
-npx tailwindcss init -p
-```
-
-
+ List Organization, donation data 
