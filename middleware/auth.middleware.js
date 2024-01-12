@@ -8,7 +8,7 @@ const authMiddleware = (req, res, next) => {
     try {
       const decoded = jwt.verify(tokenExists, process.env.JWTSecret);
       if (decoded) {
-        // console.log("decoded", decoded)
+        console.log("decoded", decoded)
   
         req.body.userID = decoded.userID;
 

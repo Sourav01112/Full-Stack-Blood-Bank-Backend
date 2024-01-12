@@ -24,17 +24,17 @@ inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
 
 
     if (!user) throw new Error("Invalid Email");
-    else if (req.body.inventoryType === "Donation-In" && user.userType !== "donor") {
+    else if (req.body.inventoryType === "Incoming" && user.userType !== "donor") {
       throw new Error("The email is not recognized as Donor");
     }
     else if (
-      req.body.inventoryType === "Donation-Out" &&
+      req.body.inventoryType === "Outgoing" &&
       user.userType !== "hospital"
     ) {
       throw new Error("The email is not recognized as hospital");
     }
 
-    else if (inventoryType == 'Donation-Out' && bloodGroupCheck.length == 0 || bloodGroup.length == null) {
+    else if (inventoryType == 'Outgoing' && bloodGroupCheck.length == 0 || bloodGroup.length == null) {
       throw new Error(`The requested blood group ${bloodGroup} is currently unavailable in the inventory`);
     }
 
@@ -43,7 +43,7 @@ inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
 
     //  saving ID as per Inventory Type
 
-    if (req.body.inventoryType === "Donation-Out") {
+    if (req.body.inventoryType === "Outgoing") {
       console.log("inside Out")
       // validation for Out : If we have A+ : 100ML and we are sending 120ML out, it should throw error
       const requestedBloodGroup = req.body.bloodGroup;
@@ -57,7 +57,7 @@ inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
         {
           $match: {
             organization,
-            inventoryType: 'Donation-In',
+            inventoryType: 'Incoming',
             bloodGroup: req.body.bloodGroup
           },
         },
@@ -80,7 +80,7 @@ inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
         {
           $match: {
             organization,
-            inventoryType: 'Donation-Out',
+            inventoryType: 'Outgoing',
             bloodGroup: req.body.bloodGroup
           },
         },
@@ -159,6 +159,58 @@ inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
         return res.send({
           success: true,
           data: doc,
+          message: 'Fetched Inventory'
+        });
+      } else {
+        console.log("inside else")
+
+      }
+    })
+  }
+  catch (error) {
+    return res.status(400).send({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// get Inventory based on filters (Common Inventory Table)
+inventoryRouter.post("/getInventory-filter", authMiddleware, async (req, res) => {
+  console.log("inside getInventory/filter ###>", req.body)
+
+  var idfromAuthMiddleware = req.body.userID
+
+  const options = {
+    page: req.body.json.page,
+    limit: req.body.json.limit,
+    collation: {
+      locale: 'en',
+      strength: 2,
+    },
+    populate: ["hospital", 'organization'],
+    sort: { createdAt: -1 }
+  };
+
+  console.log("search", options)
+  try {
+
+    const combinedQuery = {
+      ...req.body.search,
+      ...req.body.filters,
+      hospital: idfromAuthMiddleware,
+    };
+
+    console.log("combinedQuery", combinedQuery);
+
+    InventoryModel.paginate(combinedQuery, options, function (err, doc) {
+      console.log("doc", doc);
+
+      if (doc.docs !== null) {
+        // console.log("doc", doc)
+        return res.send({
+          success: true,
+          data: doc,
           message: 'Fetched'
         });
       } else {
@@ -174,6 +226,28 @@ inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
     });
   }
 });
+
+inventoryRouter.post("/update", async (req, res) => {
+  console.log("req.body", req.body);
+
+  // Use updateMany instead of findOne
+  InventoryModel.updateMany(req.body, { $set: { inventoryType: 'Incoming' } }, { new: true })
+    .then((updation) => {
+      console.log("updation", updation);
+      const count = updation.nModified; // Number of documents modified
+
+      console.log(`Updated ${count} documents.`);
+      res.status(200).json({ message: "Update successful", updatedCount: count });
+    })
+    .catch((error) => {
+      console.error("Error updating documents:", error);
+      res.status(500).json({ message: "Error updating documents", error: error.message });
+    });
+});
+
+
+
+
 
 module.exports = { inventoryRouter };
 

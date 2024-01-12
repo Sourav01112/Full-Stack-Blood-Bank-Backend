@@ -166,7 +166,7 @@ usersRouter.post('/get-all-donors', authMiddleware, async (req, res) => {
     const aggregationPipelineResult = await InventoryModel.aggregate([
       {
         $match: {
-          inventoryType: 'Donation-In',
+          inventoryType: 'Incoming',
           organization,
         },
       },
@@ -218,7 +218,7 @@ usersRouter.post('/get-all-hospitals', authMiddleware, async (req, res) => {
     const aggregationPipelineResult = await InventoryModel.aggregate([
       {
         $match: {
-          inventoryType: 'Donation-Out',
+          inventoryType: 'Outgoing',
           organization,
         },
       },
@@ -235,7 +235,7 @@ usersRouter.post('/get-all-hospitals', authMiddleware, async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Donors Data Fetched Successfully",
+      message: "Hospital Data Fetched Successfully",
       data: response,
     })
   } catch (error) {
@@ -250,7 +250,7 @@ usersRouter.post('/get-all-hospitals', authMiddleware, async (req, res) => {
 
 
 // Get All Unique Organizations for Donor View
-
+// This retrieves a list of all the organizations to which an individual like me has contributed blood donations.
 usersRouter.post('/get-all-org-for-donor', authMiddleware, async (req, res) => {
   const page = parseInt(req.body.page, 10)
   const limit = parseInt(req.body.limit, 10)
@@ -277,7 +277,7 @@ usersRouter.post('/get-all-org-for-donor', authMiddleware, async (req, res) => {
     const aggregationPipelineResult = await InventoryModel.aggregate([
       {
         $match: {
-          inventoryType: 'Donation-In',
+          inventoryType: 'Incoming',
           donor,
         },
       },
@@ -306,6 +306,67 @@ usersRouter.post('/get-all-org-for-donor', authMiddleware, async (req, res) => {
     });
   }
 })
+
+// This retrieves a list of all the organizations to which an Hospital has asked/purchased blood donations.
+// 
+usersRouter.post('/get-all-org-for-hospital', authMiddleware, async (req, res) => {
+  const page = parseInt(req.body.page, 10)
+  const limit = parseInt(req.body.limit, 10)
+  const skip = (page - 1) * limit
+
+  const options = {
+    page,
+    limit,
+    collation: {
+      locale: 'en',
+      strength: 2,
+    },
+    sort: { createdAt: -1 }
+
+  };
+  console.log("options", options)
+
+
+  // return 
+  try {
+    // Get all unique donors ids from Inventory if it matches the Org. then show unique donors
+    const hospital = new mongoose.Types.ObjectId(req.body.userID);
+
+    const aggregationPipelineResult = await InventoryModel.aggregate([
+      {
+        $match: {
+          inventoryType: 'Outgoing',
+          hospital,
+        },
+      },
+      {
+        $group: {
+          _id: "$organization",
+        },
+      },
+    ]).exec();
+    const populateKeyword = 'users'
+
+    console.log("aggregationPipelineResult", aggregationPipelineResult)
+
+    const aggregationResult = await performPopulateAfterAggregationPipeline(aggregationPipelineResult, populateKeyword)
+    const response = formAggregateResponse(aggregationResult, options)
+
+    return res.json({
+      success: true,
+      message: "Data Fetched Successfully",
+      data: response,
+    })
+  } catch (error) {
+
+    console.log("error", error)
+    return res.json({
+      success: false,
+      message: error.message,
+    });
+  }
+})
+
 
 
 
