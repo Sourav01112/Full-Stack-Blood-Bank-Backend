@@ -7,13 +7,16 @@ const { inventoryRouter } = require("./routes/inventory.routes");
 const Port = process.env.PORT || 4500;
 const ip = require('ip')
 const path = require("path");
+const dashboardRouter = require("./routes/dashboard.routes");
 
+// Middleare
 app.use(express.json()); 
 app.use(cors());
 
 // User Routes
 app.use("/api/users", usersRouter);
 app.use('/api/inventory', inventoryRouter)
+app.use('/api/dashboard', dashboardRouter)
 
 // Server connection
 app.listen(Port, async () => {

@@ -9,7 +9,7 @@ const mongoose = require("mongoose");
 
 inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
 
-  const { email, inventoryType, bloodGroup } = req.body;
+  const { email, inventoryType, bloodGroup, organization } = req.body;
 
   console.log("req.body", req.body);
 
@@ -17,7 +17,7 @@ inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
     // based on email and inventoryType : Validation
     // fetch user
     const user = await UserModel.findOne({ email });
-    const bloodGroupCheck = await InventoryModel.find({ bloodGroup })
+    const bloodGroupCheck = await InventoryModel.find({ bloodGroup, organization })
 
     console.log("user", user);
     console.log("bloodGroupCheck", bloodGroupCheck);
@@ -73,7 +73,7 @@ inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
 
       console.log({ totalINAmountOfRequestedBloodGroup })
 
-      const totalIn = totalINAmountOfRequestedBloodGroup[0].total || 0
+      const totalIn = totalINAmountOfRequestedBloodGroup[0]?.total || null
 
 
       const totalOutAmountOfRequestedBloodGroup = await InventoryModel.aggregate([
@@ -96,7 +96,9 @@ inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
 
       console.log({ totalOutAmountOfRequestedBloodGroup })
 
-      const totalOut = totalOutAmountOfRequestedBloodGroup[0]?.total || 0
+      const totalOut = totalOutAmountOfRequestedBloodGroup[0]?.total || null
+
+      console.log("totalIn, totalOut", totalIn - totalOut);
 
       const availableQtyOfRequestedGroup = totalIn - totalOut
 
@@ -153,6 +155,9 @@ inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
       organization: idfromAuthMiddleware,
     };
 
+    console.log("combinedQuery", combinedQuery);
+
+
     InventoryModel.paginate(combinedQuery, options, function (err, doc) {
       if (doc.docs !== null) {
         // console.log("doc", doc)
@@ -177,9 +182,46 @@ inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
 
 // get Inventory based on filters (Common Inventory Table)
 inventoryRouter.post("/getInventory-filter", authMiddleware, async (req, res) => {
-  console.log("inside getInventory/filter ###>", req.body)
+
+
+  console.log("----------------------inside getInventory Filter----------------------")
+
+  console.log("req.bodyr ###>", req.body)
 
   var idfromAuthMiddleware = req.body.userID
+  var inventoryType = req.body.filters.inventoryType
+  var userTypeKey = req?.body?.filters?.filters.userType;
+  // console.log("userTypekey", userTypeKey);
+  var combinedQuery
+
+  // console.log("req.body.filters.userTyp", req.body.filters);
+
+  if (req.body.filters.organization) {
+    combinedQuery = {
+      ...req.body.json.search,
+      organization: req.body.filters.organization,
+      [req.body.filters.userType]: idfromAuthMiddleware,
+    };
+  }
+  else if (inventoryType) {
+    combinedQuery = {
+      ...req.body.json.search,
+      inventoryType,
+      [req.body.filters.userType]: idfromAuthMiddleware,
+    };
+  }
+  else {
+    combinedQuery = {
+      ...req.body.json.search,
+      [req?.body?.filters?.filters.userType]: idfromAuthMiddleware,
+    };
+
+    // console.log("combinedQueriessssssss 33333", combinedQuery);
+
+  }
+
+
+
 
   const options = {
     page: req.body.json.page,
@@ -188,23 +230,16 @@ inventoryRouter.post("/getInventory-filter", authMiddleware, async (req, res) =>
       locale: 'en',
       strength: 2,
     },
-    populate: ["hospital", 'organization'],
+    populate: ["hospital", 'organization', "donor"],
     sort: { createdAt: -1 }
   };
 
-  console.log("search", options)
   try {
-
-    const combinedQuery = {
-      ...req.body.search,
-      ...req.body.filters,
-      hospital: idfromAuthMiddleware,
-    };
-
-    console.log("combinedQuery", combinedQuery);
 
     InventoryModel.paginate(combinedQuery, options, function (err, doc) {
       console.log("doc", doc);
+      console.log("err", err);
+
 
       if (doc.docs !== null) {
         // console.log("doc", doc)
@@ -220,12 +255,30 @@ inventoryRouter.post("/getInventory-filter", authMiddleware, async (req, res) =>
     })
   }
   catch (error) {
+    console.log("error----->", error);
     return res.status(400).send({
       success: false,
       message: error.message,
     });
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 inventoryRouter.post("/update", async (req, res) => {
   console.log("req.body", req.body);
