@@ -106,6 +106,9 @@ inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
       if (availableQtyOfRequestedGroup < requestedQuantity) {
         throw new Error(`Only ${availableQtyOfRequestedGroup} ML units of ${requestedBloodGroup} are currently availabe.`)
       }
+      else{
+        
+      }
 
 
 
