@@ -6,6 +6,10 @@ const { authMiddleware } = require("../middleware/auth.middleware");
 const UserModel = require("../model/user.model");
 const InventoryModel = require("../model/inventory.model");
 const mongoose = require("mongoose");
+const nodemailer = require("nodemailer");
+const handlebars = require("handlebars");
+const fs = require("fs");
+const path = require("path");
 
 require("dotenv").config();
 
@@ -396,11 +400,101 @@ const formAggregateResponse = (aggregationResult, options) => {
 }
 
 
+// Forgot Password
+usersRouter.post("/forgotPassword", async (req, res) => {
+  console.log("req.body", req.body);
+
+
+  const { email } = req.body;
+
+
+
+  const existingUser = await UserModel.findOne({ email })
+  console.log("req", existingUser);
+
+
+
+  if (!existingUser || existingUser == null) {
+    console.log("e-------")
+    return res.status(401).send({ message: "No user found with this email address" });
+  }
 
 
 
 
 
+  // Set up the email transporter
+  const directory = path.join(__dirname, "..", "utils", "resetPassword.html");
+  const fileRead = fs.readFileSync(directory, "utf-8");
+  const template = handlebars.compile(fileRead);
+  const htmlToSend = template({ name: existingUser.name, userId: existingUser._id });
+  console.log("template--------->", htmlToSend);
+  // console.log("htmlToSend", htmlToSend);
+
+
+
+  const transporter = nodemailer.createTransport({
+    // service: "Gmail",
+    host: "smtp.zoho.com",
+    port: 465,
+    secure: true,
+    auth: {
+      user: 'info@headsupcorporation.com',
+      pass: 'jChfuR5QhEas',
+    },
+  });
+
+  // Composing the email
+  const mailOptions = {
+    from: 'info@headsupcorporation.com',
+    to: email,
+    subject: "Password Reset Request",
+    html: htmlToSend,
+  };
+
+
+  // Sending the email
+
+  transporter.sendMail(mailOptions, (err, info) => {
+    if (err) {
+      console.log('Error sending Email', err)
+      return res.status(500).send({ message: "Error sending email" });
+    }
+    console.log("Info", info)
+    return res.status(200).send({ message: "Password reset email sent" });
+  });
+
+
+
+})
+
+
+// RESET Password Route via Forgot Password
+usersRouter.patch("/resetPassword", async (req, res) => {
+  const idToCheck = req.body.id
+  const { password } = req.body.values
+  const oldUser = await UserModel.findOne({ _id: idToCheck });
+
+  if (!oldUser) {
+    return res.json({ status: "User doesn't exist !", success: false });
+  }
+  try {
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const setNewPass = await UserModel.findByIdAndUpdate(
+      { _id: idToCheck },
+      { $set: { password: hashedPassword } },
+      { new: true }
+    );
+
+    res.status(201).send({ message: "Password updated successfully", success: true });
+  } catch (error) {
+    res.json({ status: "Something Went Wrong" });
+  }
+})
+
+
+// create RESET PASSWORD LATER
 
 
 

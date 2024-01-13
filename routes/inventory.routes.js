@@ -191,35 +191,40 @@ inventoryRouter.post("/getInventory-filter", authMiddleware, async (req, res) =>
 
   console.log("req.bodyr ###>", req.body)
 
-  var idfromAuthMiddleware = req.body.userID
-  var inventoryType = req.body.filters.inventoryType
-  var userTypeKey = req?.body?.filters?.filters.userType;
+  var idfromAuthMiddleware = req?.body?.userID
+  var inventoryType = req?.body?.filters?.inventoryType
+  // var userTypeKey = req?.body?.filters?.filters?.userType;
   // console.log("userTypekey", userTypeKey);
   var combinedQuery
 
   // console.log("req.body.filters.userTyp", req.body.filters);
 
   if (req.body.filters.organization) {
+
+
+    console.log("insid otrrg=-----");
+
     combinedQuery = {
       ...req.body.json.search,
       organization: req.body.filters.organization,
-      [req.body.filters.userType]: idfromAuthMiddleware,
+      [req?.body?.filters?.userType]: idfromAuthMiddleware,
     };
   }
   else if (inventoryType) {
     combinedQuery = {
       ...req.body.json.search,
       inventoryType,
-      [req.body.filters.userType]: idfromAuthMiddleware,
+      [req.body.filters?.userType]: idfromAuthMiddleware,
     };
   }
   else {
+    console.log("insid this");
     combinedQuery = {
       ...req.body.json.search,
-      [req?.body?.filters?.filters.userType]: idfromAuthMiddleware,
+      [req?.body?.filters?.userType]: idfromAuthMiddleware,
     };
 
-    // console.log("combinedQueriessssssss 33333", combinedQuery);
+    console.log("combinedQueriessssssss 33333", combinedQuery);
 
   }
 
@@ -268,21 +273,6 @@ inventoryRouter.post("/getInventory-filter", authMiddleware, async (req, res) =>
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 inventoryRouter.post("/update", async (req, res) => {
   console.log("req.body", req.body);
 
@@ -302,9 +292,5 @@ inventoryRouter.post("/update", async (req, res) => {
 });
 
 
-
-
-
 module.exports = { inventoryRouter };
-
 
