@@ -136,7 +136,7 @@ inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
 });
 
 // get Inventory
-inventoryRouter.post("/getInventory", async (req, res) => {
+inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
 
   console.log("inside this ", req.body)
 
