@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { handleResponse } = require("../utils/helper");
 require("dotenv").config();
 
 const authMiddleware = (req, res, next) => {
@@ -9,25 +10,18 @@ const authMiddleware = (req, res, next) => {
       const decoded = jwt.verify(tokenExists, process.env.JWTSecret);
       if (decoded) {
         // console.log("decoded", decoded)
-  
         req.body.userID = decoded.userID;
-
         // req.body = req.body ? { ...req.body, userID: decoded.userID } : { userID: decoded.userID };
-
         next();
       } else {
-        res.status(200).json({ message: "Not Authorized" });
+        return handleResponse(req, res, 200, "Not Authorized", false)
       }
     } catch (error) {
-
       console.log("error in middleware", error)
-      return res.send({
-        success: false,
-        message: error.message,
-      });
+      return handleResponse(req, res, 400, "Token Expired", false)
     }
   } else {
-    res.status(400).json({ message: "Please Login!" });
+    return handleResponse(req, res, 400, "Please Login!", false)
   }
 };
 

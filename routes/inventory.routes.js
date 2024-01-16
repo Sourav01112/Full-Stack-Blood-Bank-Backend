@@ -138,7 +138,6 @@ inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
 // get Inventory
 inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
 
-  console.log("inside this ", req.body.search)
 
   var idfromAuthMiddleware = req?.body?.userID
   // Numbers inside String
@@ -160,7 +159,7 @@ inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
     sort: { createdAt: -1 }
   };
 
-
+  console.log("req.body------", req.body)
 
   try {
 
@@ -182,20 +181,13 @@ inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
       };
       InventoryModel.paginate(combinedQuery, options, function (err, doc) {
 
-        // console.log("doc----->", doc)
+        console.log("doc----->", doc)
 
-
-        if (doc?.docs !== null && doc?.docs?.length == 0) {
-          handleResponse(200, "Fetched Inventory", doc)
+        if (doc?.docs !== null && doc?.docs?.length !== 0) {
+          return handleResponse(req, res, 200, "Fetched Inventory", doc, true)
         }
         else {
-          return res.status(201).send({
-            status: 201,
-            success: false,
-            data: doc,
-            message: "Couldn't found"
-          });
-
+          return handleResponse(req, res, 200, "Couldn't found", doc, true)
         }
       })
     }
@@ -222,14 +214,10 @@ inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
 
       InventoryModel.paginate(combinedQuery, options, function (err, doc) {
         if (doc.docs !== null || doc.docs.length == 0) {
-          return res.send({
-            success: true,
-            data: doc,
-            message: 'Fetched Inventory'
-          });
+          return handleResponse(req, res, 200, "Fetched Inventory", doc, true)
         }
         else {
-          console.log("inside else")
+          return handleResponse(req, res, 200, "Couldn't found", doc, true)
 
         }
       })
@@ -249,21 +237,18 @@ inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
         // console.log("doc----->", doc)
 
         if (doc?.docs?.length !== 0 && doc !== undefined) {
-          handleResponse(req, res, 200, "Fetched Inventory", doc)
+          handleResponse(req, res, 200, "Fetched Inventory", doc, true)
         } else {
           console.log("inside else, ERROR---XXXX")
-          handleResponse(req, res, 201, "Couldn't found")
-
+          handleResponse(req, res, 201, "Couldn't found", true)
 
         }
       })
     }
   }
   catch (error) {
-    return res.status(400).send({
-      success: false,
-      message: error.message,
-    });
+    return handleResponse(req, res, 400, error.message, false)
+
   }
 });
 
