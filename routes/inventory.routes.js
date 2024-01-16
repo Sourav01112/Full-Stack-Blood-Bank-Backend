@@ -4,6 +4,8 @@ const UserModel = require("../model/user.model");
 const { authMiddleware } = require("../middleware/auth.middleware");
 const InventoryModel = require("../model/inventory.model");
 const mongoose = require("mongoose");
+const { errorMonitor } = require("stream");
+const { handleResponse } = require("../utils/helper");
 
 // Add Inventory
 
@@ -108,8 +110,8 @@ inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
       if (availableQtyOfRequestedGroup < requestedQuantity) {
         throw new Error(`Only ${availableQtyOfRequestedGroup} ML units of ${requestedBloodGroup} are currently availabe.`)
       }
-      else{
-        
+      else {
+
       }
 
 
@@ -134,10 +136,18 @@ inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
 });
 
 // get Inventory
-inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
-  console.log("inside get inventor ###>", req.body)
+inventoryRouter.post("/getInventory", async (req, res) => {
 
-  var idfromAuthMiddleware = req.body.userID
+  console.log("inside this ", req.body)
+
+  var idfromAuthMiddleware = req?.body?.userID
+  // Numbers inside String
+  var numRegInString = /^\d+$/;
+  // only alphabets
+  const onlyAlphabetReg = /^[A-Za-z]+$/
+  // Alphabets with special char.
+  const alphanumericWithSpecialReg = /^[A-Za-z0-9!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]+$/;
+
 
   const options = {
     page: req.body.page,
@@ -150,30 +160,102 @@ inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
     sort: { createdAt: -1 }
   };
 
-  // console.log("search", req.body.search)
+
+
   try {
 
-    const combinedQuery = {
-      ...req.body.search,
-      organization: idfromAuthMiddleware,
-    };
+    if (req.body.search.$text && onlyAlphabetReg.test(req.body.search.$text.$search)) {
+      const dynamicFieldValue = req.body.search.$text.$search
 
-    console.log("combinedQuery", combinedQuery);
+      const schema = InventoryModel.schema;
+      const fieldsToSearch = Object.keys(schema.paths).filter(
+        (path) => schema.paths[path].instance === 'String'
+      );
+      const orConditions = fieldsToSearch.map((field) => ({
+        [field]: { $regex: dynamicFieldValue, $options: "i" }
+      }));
+      const searchQuery = {
+        $or: orConditions
+      };
+      const combinedQuery = {
+        $and: [searchQuery, { organization: idfromAuthMiddleware }]
+      };
+      InventoryModel.paginate(combinedQuery, options, function (err, doc) {
+
+        // console.log("doc----->", doc)
 
 
-    InventoryModel.paginate(combinedQuery, options, function (err, doc) {
-      if (doc.docs !== null) {
-        // console.log("doc", doc)
-        return res.send({
-          success: true,
-          data: doc,
-          message: 'Fetched Inventory'
-        });
-      } else {
-        console.log("inside else")
+        if (doc?.docs !== null && doc?.docs?.length == 0) {
+          handleResponse(200, "Fetched Inventory", doc)
+        }
+        else {
+          return res.status(201).send({
+            status: 201,
+            success: false,
+            data: doc,
+            message: 'Fetched Inventory'
+          });
 
-      }
-    })
+        }
+      })
+    }
+    // This will search anything that has alphabets + numeric values as well as Special Characters
+    else if (req.body.search.$text && alphanumericWithSpecialReg.test(req.body.search.$text.$search)) {
+      const schema = InventoryModel.schema;
+      const fieldsToSearch = Object.keys(schema.paths).filter(
+        (path) => schema.paths[path].instance === 'String'
+      );
+
+      const orConditions = fieldsToSearch.map((field) => ({
+        [field]: { $regex: dynamicFieldValue, $options: "i" }
+      }));
+
+      const searchQuery = {
+        $or: orConditions
+      };
+
+      const combinedQuery = {
+        $and: [searchQuery, { organization: idfromAuthMiddleware }]
+      };
+
+      InventoryModel.paginate(combinedQuery, options, function (err, doc) {
+        if (doc.docs !== null || doc.docs.length == 0) {
+          return res.send({
+            success: true,
+            data: doc,
+            message: 'Fetched Inventory'
+          });
+        }
+        else {
+          console.log("inside else")
+
+        }
+      })
+
+    }
+    else {
+
+      console.log("INSIDE ELSE---")
+      const combinedQuery = {
+        ...req.body.search,
+        organization: idfromAuthMiddleware,
+      };
+      console.log("combinedQuery", combinedQuery);
+      InventoryModel.paginate(combinedQuery, options, function (err, doc) {
+
+
+        // console.log("doc----->", doc)
+
+        if (doc?.docs?.length !== 0 && doc !== undefined) {
+          handleResponse(req, res, 200, "Fetched Inventory", doc)
+        } else {
+          console.log("inside else, ERROR---XXXX")
+          handleResponse(req, res, 201, "Couldn't found")
+
+
+        }
+      })
+    }
   }
   catch (error) {
     return res.status(400).send({

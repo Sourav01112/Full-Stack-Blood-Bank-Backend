@@ -91,7 +91,7 @@ const userSchema = new mongoose.Schema(
     },
     owner: {
       type: String,
-      required: true,
+      // required: true,
     }
   },
 

@@ -12,7 +12,7 @@ const inventorySchema = new mongoose.Schema(
     bloodGroup: {
       type: String,
       required: true,
-       
+
     },
     quantity: {
       type: Number,
@@ -54,6 +54,12 @@ const inventorySchema = new mongoose.Schema(
 
 inventorySchema.plugin(mongoosePaginate);
 // inventorySchema.plugin(aggregatePaginate);
+
+inventorySchema.index({
+  inventoryType: 'text',
+  bloodGroup: 'text',
+  email: 'email'
+});
 
 const InventoryModel = mongoose.model("inventories", inventorySchema);
 
