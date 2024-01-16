@@ -91,7 +91,14 @@ const userSchema = new mongoose.Schema(
     },
     owner: {
       type: String,
-      required: true,
+      type: String,
+      required: function () {
+        if (this.userType === "organization" || this.userType === "hospital") {
+          return true;
+        } else {
+          return false;
+        }
+      },
     }
   },
 
