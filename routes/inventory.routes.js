@@ -138,7 +138,7 @@ inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
 // get Inventory
 inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
 
-  console.log("inside this ", req.body)
+  console.log("inside this ", req.body.search)
 
   var idfromAuthMiddleware = req?.body?.userID
   // Numbers inside String
@@ -193,7 +193,7 @@ inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
             status: 201,
             success: false,
             data: doc,
-            message: 'Fetched Inventory'
+            message: "Couldn't found"
           });
 
         }
@@ -201,6 +201,8 @@ inventoryRouter.post("/getInventory", authMiddleware, async (req, res) => {
     }
     // This will search anything that has alphabets + numeric values as well as Special Characters
     else if (req.body.search.$text && alphanumericWithSpecialReg.test(req.body.search.$text.$search)) {
+      const dynamicFieldValue = req.body.search.$text.$search
+
       const schema = InventoryModel.schema;
       const fieldsToSearch = Object.keys(schema.paths).filter(
         (path) => schema.paths[path].instance === 'String'
