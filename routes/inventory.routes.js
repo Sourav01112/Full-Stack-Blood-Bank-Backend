@@ -341,7 +341,7 @@ inventoryRouter.post("/getInventory-filter", authMiddleware, async (req, res) =>
 });
 
 
-
+// 
 inventoryRouter.post("/update", async (req, res) => {
   console.log("req.body", req.body);
 

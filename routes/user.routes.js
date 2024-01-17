@@ -10,6 +10,7 @@ const nodemailer = require("nodemailer");
 const handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
+const { handleResponse } = require("../utils/helper");
 
 require("dotenv").config();
 
@@ -372,8 +373,6 @@ usersRouter.post('/get-all-org-for-hospital', authMiddleware, async (req, res) =
 })
 
 
-
-
 const performPopulateAfterAggregationPipeline = async (aggregationPipelineResult, populateKeyword) => {
   return await InventoryModel.populate(aggregationPipelineResult, {
     path: '_id',
@@ -428,25 +427,30 @@ usersRouter.post("/forgotPassword", async (req, res) => {
   const fileRead = fs.readFileSync(directory, "utf-8");
   const template = handlebars.compile(fileRead);
   const htmlToSend = template({ name: existingUser.name, userId: existingUser._id });
-  console.log("template--------->", htmlToSend);
+  // console.log("template--------->", htmlToSend);
   // console.log("htmlToSend", htmlToSend);
 
 
 
   const transporter = nodemailer.createTransport({
-    // service: "Gmail",
-    host: "smtp.zoho.com",
-    port: 465,
-    secure: true,
+    service: "Gmail",
     auth: {
-      user: 'info@headsupcorporation.com',
-      pass: 'jChfuR5QhEas',
+      user: process.env.NodeMailerUser,
+      pass: process.env.NodeMailerPass,
     },
   });
 
+
+  // user: 'info@headsupcorporation.com',
+  // pass: 'jChfuR5QhEas',
+  // host: "smtp.zoho.com",
+  // port: 465,
+  // secure: true,
   // Composing the email
+
+
   const mailOptions = {
-    from: 'info@headsupcorporation.com',
+    from: 'chaudharysourav.vats@gmail.com',
     to: email,
     subject: "Password Reset Request",
     html: htmlToSend,
@@ -458,10 +462,10 @@ usersRouter.post("/forgotPassword", async (req, res) => {
   transporter.sendMail(mailOptions, (err, info) => {
     if (err) {
       console.log('Error sending Email', err)
-      return res.status(500).send({ message: "Error sending email" });
+      return handleResponse(req, res, 404, "Error sending Email", false)
     }
     console.log("Info", info)
-    return res.status(200).send({ message: "Password reset email sent" });
+    return handleResponse(req, res, 200, "Password reset email sent", true)
   });
 
 
