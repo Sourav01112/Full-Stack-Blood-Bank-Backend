@@ -9,9 +9,6 @@ const InventoryModel = require("../model/inventory.model");
 // Get All Blood Groups (Total In, Total Out, Available Quantity)
 
 dashboardRouter.post('/bloodGroup-data-all', authMiddleware, async (req, res) => {
-
-  
-
     try {
         const allBloodGroup = [
             "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"

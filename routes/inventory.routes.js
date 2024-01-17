@@ -123,15 +123,23 @@ inventoryRouter.post("/addInventory", authMiddleware, async (req, res) => {
     // add Inventory
     const inventory = new InventoryModel(req.body);
     await inventory.save();
-    res.status(200).send({
-      success: true,
-      message: "Inventory has been added successfully",
-    });
+
+    return handleResponse(req, res, 200, "Inventory has been added successfully", true)
+
+
+    // res.status(200).send({
+    //   success: true,
+    //   message: "Inventory has been added successfully",
+    // });
   } catch (error) {
-    return res.status(400).send({
-      success: false,
-      message: error.message,
-    });
+
+
+    return handleResponse(req, res, 400, error.message, false)
+
+    // return res.status(400).send({
+    //   success: false,
+    //   message: error.message,
+    // });
   }
 });
 
